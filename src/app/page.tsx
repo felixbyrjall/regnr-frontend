@@ -2,13 +2,15 @@
 
 import { SearchBar } from './components/search/SearchBar';
 import { ErrorMessage } from './components/search/ErrorMessage';
-import { VehicleDetails } from './components/search/VehicleDetailsSimple';
+import { VehicleDetails } from './components/search/VehicleDetails';
 import { useState, FormEvent } from 'react';
+import { SimpleVehicleData, DetailedVehicleData } from "@/app/types/vehicle";
 
 export default function Home() {
     const [licensePlate, setLicensePlate] = useState('');
-    const [vehicleData, setVehicleData] = useState(null);
-    const [error, setError] = useState(null);
+    const [isDetailedSearch, setIsDetailedSearch] = useState(false);
+    const [vehicleData, setVehicleData] = useState<SimpleVehicleData | DetailedVehicleData | null>(null);
+    const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
     const handleSubmit = async (event: FormEvent) => {
@@ -18,7 +20,11 @@ export default function Home() {
         setIsLoading(true);
 
         try {
-            const response = await fetch(`http://localhost:8080/api/vehicle/simple/${licensePlate}`);
+            const endpoint = isDetailedSearch
+                ? `http://localhost:8080/api/vehicle/detailed/${licensePlate}`
+                : `http://localhost:8080/api/vehicle/simple/${licensePlate}`;
+
+            const response = await fetch(endpoint);
             if (!response.ok) {
                 throw new Error('Kjøretøy ikke funnet');
             }
@@ -36,13 +42,20 @@ export default function Home() {
             <SearchBar
                 licensePlate={licensePlate}
                 setLicensePlate={setLicensePlate}
+                isDetailedSearch={isDetailedSearch}
+                setIsDetailedSearch={setIsDetailedSearch}
                 onSubmit={handleSubmit}
                 isLoading={isLoading}
             />
 
             <div className="container mx-auto px-4 py-8">
                 {error && <ErrorMessage message={error} />}
-                {vehicleData && <VehicleDetails vehicleData={vehicleData} />}
+                {vehicleData && (
+                    <VehicleDetails
+                        vehicleData={vehicleData}
+                        isDetailedSearch={isDetailedSearch}
+                    />
+                )}
             </div>
         </div>
     );

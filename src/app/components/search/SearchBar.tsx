@@ -3,11 +3,13 @@
 interface SearchBarProps {
     licensePlate: string;
     setLicensePlate: (value: string) => void;
+    isDetailedSearch: boolean;
+    setIsDetailedSearch: (value: boolean) => void;
     onSubmit: (e: React.FormEvent) => void;
     isLoading: boolean;
 }
 
-export const SearchBar = ({ licensePlate, setLicensePlate, onSubmit, isLoading }: SearchBarProps) => {
+export const SearchBar = ({ licensePlate, setLicensePlate, isDetailedSearch, setIsDetailedSearch, onSubmit, isLoading }: SearchBarProps) => {
     return (
         <div className="w-full bg-white shadow-lg">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -55,6 +57,22 @@ export const SearchBar = ({ licensePlate, setLicensePlate, onSubmit, isLoading }
                                         </svg>
                                     )}
                                 </button>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <input
+                                    type="checkbox"
+                                    id="advancedSearch"
+                                    checked={isDetailedSearch}
+                                    onChange={(e) => setIsDetailedSearch(e.target.checked)}
+                                    className="h-4 w-4 text-blue-600 focus:ring-blue-500
+                                                 border-gray-300 rounded cursor-pointer"
+                                />
+                                <label
+                                    htmlFor="advancedSearch"
+                                    className="text-sm text-gray-600 cursor-pointer hover:text-gray-900"
+                                >
+                                    Detaljert søk (Få utvidet kjøretøysinformasjon)
+                                </label>
                             </div>
                         </form>
                     </div>
