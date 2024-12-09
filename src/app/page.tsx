@@ -3,16 +3,28 @@
 import { SearchBar } from './components/search/SearchBar';
 import { ErrorMessage } from './components/search/ErrorMessage';
 import { VehicleDetails } from './components/search/VehicleDetails';
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, useEffect } from 'react';
 import { SimpleVehicleData, DetailedVehicleData } from "@/app/types/vehicle";
+import { useAuth } from '@/context/AuthContext';
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
+    const { isAuthenticated, token } = useAuth();
     const [licensePlate, setLicensePlate] = useState('');
     const [isDetailedSearch, setIsDetailedSearch] = useState(false);
     const [vehicleData, setVehicleData] = useState<SimpleVehicleData | DetailedVehicleData | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const router = useRouter();
 
+    // Redirect to login if not authenticated
+    useEffect(() => {
+        if (!isAuthenticated) {
+            router.push('/login'); // Use Next.js router for navigation
+        }
+    }, [isAuthenticated, router]);
+
+    // Handle search submit
     const handleSubmit = async (event: FormEvent) => {
         event.preventDefault();
         setError(null);
@@ -24,7 +36,12 @@ export default function Home() {
                 ? `http://localhost:8080/api/vehicle/detailed/${licensePlate}`
                 : `http://localhost:8080/api/vehicle/simple/${licensePlate}`;
 
-            const response = await fetch(endpoint);
+            const response = await fetch(endpoint, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
             if (!response.ok) {
                 throw new Error('Kjøretøy ikke funnet');
             }
@@ -36,6 +53,11 @@ export default function Home() {
             setIsLoading(false);
         }
     };
+
+    // Display loading spinner or return the search UI
+    if (!isAuthenticated) {
+        return <div className="min-h-screen flex justify-center items-center">Loading...</div>;
+    }
 
     return (
         <div className="min-h-screen bg-gray-100">
