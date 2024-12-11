@@ -1,10 +1,9 @@
 'use client';
 
-import React, {useCallback} from 'react';
+import React, { useCallback, useEffect, useState, FormEvent } from 'react';
 import { SearchBar } from './components/search/SearchBar';
 import { ErrorMessage } from './components/search/ErrorMessage';
 import { VehicleDetails } from './components/search/VehicleDetails';
-import { useState, FormEvent, useEffect } from 'react';
 import { SimpleVehicleData, DetailedVehicleData } from "@/app/types/vehicle";
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -35,7 +34,7 @@ const Navbar = ({ username, onLogout }: { username: string | null, onLogout: () 
 };
 
 export default function Home() {
-    const { isAuthenticated, token, logout, user } = useAuth();
+    const { isAuthenticated, token, logout, user, userId } = useAuth();
     const [licensePlate, setLicensePlate] = useState('');
     const [isDetailedSearch, setIsDetailedSearch] = useState(false);
     const [vehicleData, setVehicleData] = useState<SimpleVehicleData | DetailedVehicleData | null>(null);
@@ -64,13 +63,13 @@ export default function Home() {
                     await axios.get('http://localhost:8082/api/test-auth', {
                         headers: {
                             'Authorization': `Bearer ${token}`,
-                            'Content-Type': 'application/json'
-                        }
+                            'Content-Type': 'application/json',
+                            'X-User-Id': userId,
+                        },
                     });
                     console.log('Auth check successful');
                 } catch (error: any) {
                     console.log('Auth check failed:', error.response?.status);
-                    console.log('Full error:', error);
                     if (error.response?.status === 401) {
                         console.log('Token expired, logging out');
                         logout();
@@ -84,8 +83,7 @@ export default function Home() {
                 clearInterval(interval);
             };
         }
-    }, [isAuthenticated, token, logout, router]);
-
+    }, [isAuthenticated, token, logout, router, user, userId]);
 
     const handleSubmit = async (event: FormEvent) => {
         event.preventDefault();
@@ -98,9 +96,12 @@ export default function Home() {
                 ? `http://localhost:8080/api/vehicle/detailed/${licensePlate}`
                 : `http://localhost:8080/api/vehicle/simple/${licensePlate}`;
 
+            console.log("Making request with userId:", userId);
+
             const response = await axios.get(endpoint, {
                 headers: {
                     Authorization: `Bearer ${token}`,
+                    'X-User-Id': userId,
                 },
             });
 

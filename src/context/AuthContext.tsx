@@ -5,6 +5,7 @@ import axios from 'axios';
 
 interface AuthContextProps {
     user: string | null;
+    userId: string | null;
     token: string | null;
     login: (username: string, password: string) => Promise<void>;
     logout: () => void;
@@ -16,6 +17,7 @@ const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [user, setUser] = useState<string | null>(null);
+    const [userId, setUserId] = useState<string | null>(null);
     const [token, setToken] = useState<string | null>(null);
 
     axios.defaults.withCredentials = true;
@@ -33,9 +35,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         const storedToken = localStorage.getItem('token');
         const storedUser = localStorage.getItem('user');
+        const storedUserId = localStorage.getItem('userId');
+        console.log("Stored userId:", storedUserId);
         if (storedToken && storedUser) {
             setToken(storedToken);
             setUser(storedUser);
+            setUserId(storedUserId);
             axios.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
         }
     }, []);
@@ -71,11 +76,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                     }
                 }
             );
-            const { token } = response.data;
+            const { token, userId } = response.data;
             setToken(token);
             setUser(username);
+            setUserId(userId)
             localStorage.setItem('token', token);
             localStorage.setItem('user', username);
+            localStorage.setItem('userId', userId);
             axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
         } catch (error: any) {
             console.error('Login failed:', error.response?.data || error.message);
@@ -96,15 +103,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const logout = () => {
         setToken(null);
         setUser(null);
+        setUserId(null);
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+        localStorage.removeItem('userId')
         delete axios.defaults.headers.common['Authorization'];
     };
 
     const isAuthenticated = !!token;
 
     return (
-        <AuthContext.Provider value={{ user, token, login, logout, register, isAuthenticated }}>
+        <AuthContext.Provider value={{ user, userId, token, login, logout, register, isAuthenticated }}>
             {children}
         </AuthContext.Provider>
     );
