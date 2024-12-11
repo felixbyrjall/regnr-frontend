@@ -7,29 +7,56 @@ import { VehicleDetails } from './components/search/VehicleDetails';
 import { SimpleVehicleData, DetailedVehicleData } from "@/app/types/vehicle";
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
+import { AdminHistoryView } from './components/history/AdminHistoryView';
+import { UserHistoryView } from './components/history/UserHistoryView';
 import axios from "axios";
 
 const Navbar = ({ username, onLogout }: { username: string | null, onLogout: () => void }) => {
+    const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+    const { token } = useAuth();
+    const [isAdmin, setIsAdmin] = useState(false);
+
+    useEffect(() => {
+        if (token) {
+            // Parse the JWT token to check for admin role
+            const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+            setIsAdmin(tokenPayload.roles.includes('ADMIN'));
+        }
+    }, [token]);
+
     return (
-        <nav className="bg-white shadow-lg mb-6">
-            <div className="max-w-7xl mx-auto px-4">
-                <div className="flex justify-between h-16">
-                    <div className="flex items-center">
-                        <span className="text-gray-800 text-lg font-semibold">
-                            {username ? `Welcome, ${username}` : 'Welcome'}
-                        </span>
-                    </div>
-                    <div className="flex items-center">
-                        <button
-                            onClick={onLogout}
-                            className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors"
-                        >
-                            Logout
-                        </button>
+        <>
+            <nav className="bg-white shadow-lg mb-6">
+                <div className="max-w-7xl mx-auto px-4">
+                    <div className="flex justify-between h-16">
+                        <div className="flex items-center">
+                            <span className="text-gray-800 text-lg font-semibold">
+                                {username ? `Welcome, ${username}` : 'Welcome'}
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <button
+                                onClick={() => setIsHistoryOpen(true)}
+                                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+                            >
+                                {isAdmin ? 'View All History' : 'View History'}
+                            </button>
+                            <button
+                                onClick={onLogout}
+                                className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors"
+                            >
+                                Logout
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </nav>
+            </nav>
+            {isAdmin ? (
+                <AdminHistoryModal isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} />
+            ) : (
+                <UserHistoryModal isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} />
+            )}
+        </>
     );
 };
 
@@ -40,6 +67,8 @@ export default function Home() {
     const [vehicleData, setVehicleData] = useState<SimpleVehicleData | DetailedVehicleData | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [showHistory, setShowHistory] = useState(false);
+    const [isAdmin, setIsAdmin] = useState(false);
     const router = useRouter();
 
     const handleLogout = useCallback(() => {
@@ -47,6 +76,23 @@ export default function Home() {
         logout();
         router.push('/login');
     }, [logout, router]);
+
+    useEffect(() => {
+        if (token) {
+            try {
+                const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+                console.log('Token payload:', tokenPayload);
+                if (tokenPayload && tokenPayload.roles) {
+                    setIsAdmin(tokenPayload.roles.includes('ADMIN'));
+                } else {
+                    setIsAdmin(false);
+                }
+            } catch (error) {
+                console.error('Error parsing token:', error);
+                setIsAdmin(false);
+            }
+        }
+    }, [token]);
 
     useEffect(() => {
         if (!isAuthenticated) {
@@ -123,27 +169,56 @@ export default function Home() {
 
     return (
         <div className="min-h-screen bg-gray-100">
-            <Navbar username={user} onLogout={handleLogout} />
+            <nav className="bg-white shadow-lg mb-6">
+                <div className="max-w-7xl mx-auto px-4">
+                    <div className="flex justify-between h-16">
+                        <div className="flex items-center">
+                            <span className="text-gray-800 text-lg font-semibold">
+                                {user ? `Welcome, ${user}` : 'Welcome'}
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <button
+                                onClick={() => setShowHistory(!showHistory)}
+                                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+                            >
+                                {showHistory ? 'Show Search' : 'Show History'}
+                            </button>
+                            <button
+                                onClick={handleLogout}
+                                className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors"
+                            >
+                                Logout
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </nav>
 
             <div className="max-w-7xl mx-auto px-4">
-                <SearchBar
-                    licensePlate={licensePlate}
-                    setLicensePlate={setLicensePlate}
-                    isDetailedSearch={isDetailedSearch}
-                    setIsDetailedSearch={setIsDetailedSearch}
-                    onSubmit={handleSubmit}
-                    isLoading={isLoading}
-                />
-
-                <div className="mt-8">
-                    {error && <ErrorMessage message={error} />}
-                    {vehicleData && (
-                        <VehicleDetails
-                            vehicleData={vehicleData}
+                {showHistory ? (
+                    isAdmin ? <AdminHistoryView /> : <UserHistoryView />
+                ) : (
+                    <>
+                        <SearchBar
+                            licensePlate={licensePlate}
+                            setLicensePlate={setLicensePlate}
                             isDetailedSearch={isDetailedSearch}
+                            setIsDetailedSearch={setIsDetailedSearch}
+                            onSubmit={handleSubmit}
+                            isLoading={isLoading}
                         />
-                    )}
-                </div>
+                        <div className="mt-8">
+                            {error && <ErrorMessage message={error} />}
+                            {vehicleData && (
+                                <VehicleDetails
+                                    vehicleData={vehicleData}
+                                    isDetailedSearch={isDetailedSearch}
+                                />
+                            )}
+                        </div>
+                    </>
+                )}
             </div>
         </div>
     );
