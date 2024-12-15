@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import axios from 'axios';
 import { SearchHistoryItem } from '@/app/types/history';
+import {API_BASE_URL} from "@/app/config/constants";
 
 export const UserHistoryView = () => {
     const { userId, token } = useAuth();
@@ -17,7 +18,7 @@ export const UserHistoryView = () => {
             setError(null);
             try {
                 const response = await axios.get<SearchHistoryItem[]>(
-                    `http://localhost:8083/api/history/user/${userId}`,
+                    `${API_BASE_URL}/api/history/user/${userId}`,
                     {
                         headers: {
                             Authorization: `Bearer ${token}`,

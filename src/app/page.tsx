@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useState, FormEvent } from 'react';
+import { API_BASE_URL } from '@/app/config/constants';
 import { SearchBar } from './components/search/SearchBar';
 import { ErrorMessage } from './components/search/ErrorMessage';
 import { VehicleDetails } from './components/search/VehicleDetails';
@@ -106,7 +107,7 @@ export default function Home() {
             const interval = setInterval(async () => {
                 try {
                     console.log('Making auth check request...');
-                    await axios.get('http://localhost:8082/api/test-auth', {
+                    await axios.get(`${API_BASE_URL}/api/test-auth`, {
                         headers: {
                             'Authorization': `Bearer ${token}`,
                             'Content-Type': 'application/json',
@@ -139,8 +140,8 @@ export default function Home() {
 
         try {
             const endpoint = isDetailedSearch
-                ? `http://localhost:8080/api/vehicle/detailed/${licensePlate}`
-                : `http://localhost:8080/api/vehicle/simple/${licensePlate}`;
+                ? `${API_BASE_URL}/api/vehicle/detailed/${licensePlate}`
+                : `${API_BASE_URL}/api/vehicle/simple/${licensePlate}`;
 
             console.log("Making request with userId:", userId);
 
