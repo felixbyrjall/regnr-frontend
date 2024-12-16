@@ -4,9 +4,9 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import axios from 'axios';
 import { SearchHistoryItem } from '@/app/types/history';
-import {API_BASE_URL} from "@/app/config/constants";
+import { API_BASE_URL } from "@/app/config/constants";
 
-export const UserHistoryView = () => {
+export const UserHistoryView = ({ onLicensePlateClick }: { onLicensePlateClick: (plate: string, isDetailed?: boolean) => void }) => {
     const { userId, token } = useAuth();
     const [history, setHistory] = useState<SearchHistoryItem[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -25,7 +25,12 @@ export const UserHistoryView = () => {
                         },
                     }
                 );
-                setHistory(response.data);
+
+                const sortedHistory = response.data.sort((a, b) =>
+                    new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+                );
+
+                setHistory(sortedHistory);
             } catch (err) {
                 setError('Failed to load history');
                 console.error('Error fetching history:', err);
@@ -69,7 +74,12 @@ export const UserHistoryView = () => {
                     <tbody className="bg-white divide-y divide-gray-200">
                     {history.map((item) => (
                         <tr key={item.id} className="hover:bg-gray-50">
-                            <td className="px-4 py-2">{item.licensePlate}</td>
+                            <td
+                                className="px-4 py-2 cursor-pointer text-blue-600 hover:underline"
+                                onClick={() => onLicensePlateClick(item.licensePlate)}
+                            >
+                                {item.licensePlate}
+                            </td>
                             <td className="px-4 py-2">
                                 {new Date(item.timestamp).toLocaleString()}
                             </td>
