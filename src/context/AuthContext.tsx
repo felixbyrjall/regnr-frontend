@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
+import { API_BASE_URL } from '@/app/config/constants.ts';
 import axios from 'axios';
 
 interface AuthContextProps {
@@ -25,13 +26,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     useEffect(() => {
         const setupCsrf = async () => {
             try {
-                const response = await axios.get('http://localhost:8082/api/csrf');
-                axios.defaults.headers.common['X-XSRF-TOKEN'] = response.data.token;
-            } catch (error) {
-                console.error('Failed to fetch CSRF token:', error);
+                console.log('Starting CSRF setup...');
+                const response = await axios.get(`${API_BASE_URL}/api/csrf`, {
+                    withCredentials: true,
+                });
+                console.log('CSRF Response:', response);
+            } catch (error: any) {
+                console.error('CSRF Error:', {
+                    message: error.message,
+                    response: error.response,
+                    request: error.request,
+                    config: error.config
+                });
             }
         };
-        setupCsrf();
 
         const storedToken = localStorage.getItem('token');
         const storedUser = localStorage.getItem('user');
@@ -63,10 +71,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const login = async (username: string, password: string) => {
         try {
-            const csrfResponse = await axios.get('http://localhost:8082/api/csrf');
+            const csrfResponse = await axios.get(`${API_BASE_URL}/api/csrf`);
             const csrfToken = csrfResponse.data.token;
 
-            const response = await axios.post('http://localhost:8082/api/auth/login',
+            const response = await axios.post(`${API_BASE_URL}/api/auth/login`,
                 { username, password },
                 {
                     withCredentials: true,
@@ -92,7 +100,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const register = async (username: string, password: string, email: string) => {
         try {
-            await axios.post('http://localhost:8082/api/auth/register', { username, password, email });
+            await axios.post(`${API_BASE_URL}/api/auth/register`, { username, password, email });
             console.log('Registration successful');
         } catch (error: any) {
             console.error('Registration failed:', error.response?.data || error.message);

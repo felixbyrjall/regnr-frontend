@@ -1,11 +1,33 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import axios from 'axios';
 import { SearchHistoryItem } from '@/app/types/history';
+import { API_BASE_URL } from "@/app/config/constants";
 
-export const AdminHistoryView = () => {
+const HistoryRow = React.memo(({
+                                   item,
+                                   onLicensePlateClick,
+                               }: {
+    item: SearchHistoryItem,
+    onLicensePlateClick: (plate: string, isDetailed?: boolean) => void
+}) => (
+    <tr className="hover:bg-gray-50">
+        <td className="px-4 py-2">{item.userId}</td>
+        <td
+            className="px-4 py-2 cursor-pointer text-blue-600 hover:underline"
+            onClick={() => onLicensePlateClick(item.licensePlate)}
+        >
+            {item.licensePlate}
+        </td>
+        <td className="px-4 py-2">
+            {new Date(item.timestamp).toLocaleString()}
+        </td>
+    </tr>
+));
+
+export const AdminHistoryView = ({ onLicensePlateClick }: { onLicensePlateClick: (plate: string, isDetailed?: boolean) => void }) => {
     const { token } = useAuth();
     const [history, setHistory] = useState<SearchHistoryItem[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -17,14 +39,18 @@ export const AdminHistoryView = () => {
             setError(null);
             try {
                 const response = await axios.get<SearchHistoryItem[]>(
-                    'http://localhost:8083/api/history/all',
+                    `${API_BASE_URL}/api/history/all`,
                     {
                         headers: {
                             Authorization: `Bearer ${token}`,
                         },
                     }
                 );
-                setHistory(response.data);
+
+                const sortedHistory = response.data
+                    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+                setHistory(sortedHistory);
             } catch (err) {
                 setError('Failed to load history');
                 console.error('Error fetching history:', err);
@@ -68,13 +94,11 @@ export const AdminHistoryView = () => {
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                     {history.map((item) => (
-                        <tr key={item.id} className="hover:bg-gray-50">
-                            <td className="px-4 py-2">{item.userId}</td>
-                            <td className="px-4 py-2">{item.licensePlate}</td>
-                            <td className="px-4 py-2">
-                                {new Date(item.timestamp).toLocaleString()}
-                            </td>
-                        </tr>
+                        <HistoryRow
+                            key={`${item.id}-${item.timestamp}`}
+                            item={item}
+                            onLicensePlateClick={onLicensePlateClick}
+                        />
                     ))}
                     </tbody>
                 </table>
